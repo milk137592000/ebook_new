@@ -1,8 +1,13 @@
+import sys
+import os
+
+# 添加根目錄到Python路徑
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import app
 
-# Vercel需要這個作為入口點
-def handler(request):
-    return app(request.environ, request.start_response)
-
-# 也可以直接導出app
+# Vercel入口點
 application = app
+
+if __name__ == "__main__":
+    app.run()

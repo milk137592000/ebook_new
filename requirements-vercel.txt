@@ -1,0 +1,6 @@
+Flask==3.0.0
+ebooklib==0.18
+beautifulsoup4==4.12.2
+lxml==4.9.3
+opencc-python-reimplemented==0.1.7
+Werkzeug==3.0.1
