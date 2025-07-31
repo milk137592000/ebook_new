@@ -68,6 +68,11 @@ def index():
     """主頁"""
     return render_template('index.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    """Favicon路由"""
+    return send_file('static/favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
