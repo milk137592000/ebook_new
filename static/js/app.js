@@ -198,10 +198,23 @@ function startConversion() {
         },
         body: JSON.stringify(conversionData)
     })
-    .then(response => response.json())
+    .then(response => {
+        // 檢查響應是否成功
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // 檢查響應是否為JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('服務器返回了非JSON響應，可能是HTML錯誤頁面');
+        }
+
+        return response.json();
+    })
     .then(data => {
         hideProgress();
-        
+
         if (data.success) {
             conversionResult = data;
             showResult(data);
@@ -211,6 +224,7 @@ function startConversion() {
     })
     .catch(error => {
         hideProgress();
+        console.error('轉換錯誤:', error);
         showError('轉換過程發生錯誤: ' + error.message);
     });
 }

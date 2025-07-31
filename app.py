@@ -111,42 +111,59 @@ def upload_file():
 def convert_file():
     """處理檔案轉換"""
     try:
+        # 檢查請求數據
+        if not request.is_json:
+            return jsonify({'error': '請求必須是JSON格式'}), 400
+
         data = request.get_json()
+        if not data:
+            return jsonify({'error': '無效的JSON數據'}), 400
+
         filename = data.get('filename')
         line_height = float(data.get('line_height', 1.6))
         output_format = data.get('output_format', 'epub')
         convert_simplified = data.get('convert_simplified', True)
-        
+
         if not filename:
             return jsonify({'error': '沒有指定檔案'}), 400
-        
+
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         if not os.path.exists(file_path):
-            return jsonify({'error': '檔案不存在'}), 404
-        
+            return jsonify({'error': f'檔案不存在: {filename}'}), 404
+
         # 檢測檔案類型
         file_type = detect_file_type(file_path)
-        
+
         # 創建輸出目錄
-        output_dir = os.path.join(app.config['OUTPUT_FOLDER'], 
+        output_dir = os.path.join(app.config['OUTPUT_FOLDER'],
                                  f"converted_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(output_dir, exist_ok=True)
-        
+
         result = {}
-        
+
         if file_type == 'epub':
-            result = process_epub_file(file_path, output_dir, line_height, 
+            result = process_epub_file(file_path, output_dir, line_height,
                                      output_format, convert_simplified)
         elif file_type == 'pdf':
-            result = process_pdf_file(file_path, output_dir, line_height, 
+            result = process_pdf_file(file_path, output_dir, line_height,
                                     output_format, convert_simplified)
         else:
-            return jsonify({'error': '不支援的檔案格式'}), 400
-        
+            return jsonify({'error': f'不支援的檔案格式: {file_type}'}), 400
+
         if result.get('success'):
             return jsonify(result)
         else:
-            return jsonify({'error': result.get('error', '轉換失敗')}), 500
+            error_msg = result.get('error', '轉換失敗')
+            return jsonify({'error': error_msg}), 500
+
+    except ValueError as e:
+        return jsonify({'error': f'數據格式錯誤: {str(e)}'}), 400
+    except Exception as e:
+        # 記錄詳細錯誤信息
+        print(f"轉換API錯誤: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'服務器內部錯誤: {str(e)}'}), 500
             
     except Exception as e:
         return jsonify({'error': f'轉換過程發生錯誤: {str(e)}'}), 500
@@ -295,9 +312,15 @@ def process_pdf_file(file_path, output_dir, line_height, output_format, convert_
             return {'error': 'PDF檔案支援轉換為Markdown或EPUB格式'}
             
     except Exception as e:
+        print(f"PDF處理錯誤: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {'error': f'PDF處理失敗: {str(e)}'}
     finally:
-        pdf_processor.close()
+        try:
+            pdf_processor.close()
+        except:
+            pass
 
 
 @app.route('/download/<output_dir>/<filename>')
@@ -333,6 +356,35 @@ def get_status():
         'upload_folder': app.config['UPLOAD_FOLDER'],
         'max_file_size': '100MB'
     })
+
+
+# 錯誤處理器
+@app.errorhandler(404)
+def not_found(error):
+    """404錯誤處理"""
+    if request.path.startswith('/api/') or request.path in ['/convert', '/upload', '/status']:
+        return jsonify({'error': 'API端點不存在'}), 404
+    return jsonify({'error': '頁面不存在'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """500錯誤處理"""
+    print(f"500錯誤: {str(error)}")
+    return jsonify({'error': '伺服器內部錯誤'}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """全局異常處理"""
+    print(f"未處理的異常: {str(e)}")
+    import traceback
+    traceback.print_exc()
+
+    # 對於API請求，返回JSON錯誤
+    if request.path.startswith('/api/') or request.path in ['/convert', '/upload', '/status']:
+        return jsonify({'error': f'服務器錯誤: {str(e)}'}), 500
+
+    # 對於其他請求，返回JSON錯誤
+    return jsonify({'error': '服務器內部錯誤'}), 500
 
 
 # Vercel需要這個變數
