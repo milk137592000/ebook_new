@@ -47,10 +47,10 @@ class PdfProcessor:
         try:
             # 使用PyPDF2載入PDF
             if PYPDF2_AVAILABLE:
-                with open(file_path, 'rb') as file:
-                    self.document = PyPDF2.PdfReader(file)
-                    # 驗證PDF是否可讀
-                    _ = len(self.document.pages)
+                # 直接載入PDF文件，不使用with語句
+                self.document = PyPDF2.PdfReader(file_path)
+                # 驗證PDF是否可讀
+                _ = len(self.document.pages)
 
             self.file_path = file_path
             return True
@@ -71,35 +71,33 @@ class PdfProcessor:
         pages_content = []
 
         try:
-            # 使用PyPDF2提取文字
-            if PYPDF2_AVAILABLE:
-                with open(self.file_path, 'rb') as file:
-                    pdf_reader = PyPDF2.PdfReader(file)
+            # 使用已載入的document提取文字
+            if self.document and PYPDF2_AVAILABLE:
+                for page_num, page in enumerate(self.document.pages):
+                    try:
+                        text = page.extract_text()
 
-                    for page_num, page in enumerate(pdf_reader.pages):
-                        try:
-                            text = page.extract_text()
+                        page_content = {
+                            'page_number': page_num + 1,
+                            'paragraphs': []
+                        }
 
-                            page_content = {
-                                'page_number': page_num + 1,
-                                'paragraphs': []
-                            }
+                        # 簡單的段落分割
+                        paragraphs = text.split('\n\n')
+                        for para_text in paragraphs:
+                            para_text = para_text.strip()
+                            if para_text:
+                                page_content['paragraphs'].append({
+                                    'text': para_text,
+                                    'font_size': 12,  # 預設字體大小
+                                    'is_chapter': len(para_text) < 100 and para_text.isupper()  # 簡單的章節檢測
+                                })
 
-                            # 簡單的段落分割
-                            paragraphs = text.split('\n\n')
-                            for para_text in paragraphs:
-                                para_text = para_text.strip()
-                                if para_text:
-                                    page_content['paragraphs'].append({
-                                        'text': para_text,
-                                        'font_size': 12,  # 預設字體大小
-                                        'is_chapter': len(para_text) < 100 and para_text.isupper()  # 簡單的章節檢測
-                                    })
-
+                        if page_content['paragraphs']:  # 只添加有內容的頁面
                             pages_content.append(page_content)
-                        except Exception as e:
-                            print(f"提取第{page_num + 1}頁失敗: {e}")
-                            continue
+                    except Exception as e:
+                        print(f"提取第{page_num + 1}頁失敗: {e}")
+                        continue
 
         except Exception as e:
             print(f"提取PDF文字失敗: {e}")
@@ -118,11 +116,10 @@ class PdfProcessor:
         
         try:
             full_text = ""
-            for page_num in range(len(self.document)):
-                page = self.document[page_num]
-                text = page.get_text()
+            for page in self.document.pages:
+                text = page.extract_text()
                 full_text += text + "\n\n"
-            
+
             return full_text.strip()
         except Exception as e:
             print(f"提取PDF文字失敗: {e}")
@@ -220,29 +217,29 @@ class PdfProcessor:
             return {}
         
         try:
-            metadata = self.document.metadata
-            
+            metadata = self.document.metadata or {}
+
             return {
-                'title': metadata.get('title', 'Unknown'),
-                'author': metadata.get('author', 'Unknown'),
-                'subject': metadata.get('subject', ''),
-                'creator': metadata.get('creator', ''),
-                'producer': metadata.get('producer', ''),
-                'creation_date': metadata.get('creationDate', ''),
-                'modification_date': metadata.get('modDate', ''),
-                'page_count': len(self.document),
+                'title': metadata.get('/Title', 'Unknown'),
+                'author': metadata.get('/Author', 'Unknown'),
+                'subject': metadata.get('/Subject', ''),
+                'creator': metadata.get('/Creator', ''),
+                'producer': metadata.get('/Producer', ''),
+                'creation_date': str(metadata.get('/CreationDate', '')),
+                'modification_date': str(metadata.get('/ModDate', '')),
+                'page_count': len(self.document.pages),
                 'file_size': os.path.getsize(self.file_path) if self.file_path else 0
             }
         except Exception as e:
             print(f"獲取PDF資訊失敗: {e}")
-            return {'page_count': len(self.document) if self.document else 0}
+            return {'page_count': len(self.document.pages) if self.document else 0}
     
     def close(self):
         """關閉PDF檔案"""
-        if self.document:
-            self.document.close()
-            self.document = None
-            self.file_path = None
+        # PyPDF2的PdfReader不需要手動關閉
+        # 只需要清空引用即可
+        self.document = None
+        self.file_path = None
     
     def pdf_to_markdown(self, input_path: str, output_path: str) -> bool:
         """
