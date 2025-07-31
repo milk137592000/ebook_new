@@ -1,9 +1,22 @@
 /* EPUB/PDF轉換器樣式 */
 
+/* 字體設置 */
+* {
+    font-family: 'Microsoft JhengHei', '微軟正黑體', 'Microsoft YaHei', '微软雅黑', 'Noto Sans TC', 'PingFang TC', 'PingFang SC', 'Hiragino Sans GB', 'Heiti TC', 'Heiti SC', 'WenQuanYi Micro Hei', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 確保所有文字元素使用正確字體 */
+h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, label {
+    font-family: 'Microsoft JhengHei', '微軟正黑體', 'Microsoft YaHei', '微软雅黑', 'Noto Sans TC', 'PingFang TC', 'PingFang SC', 'Hiragino Sans GB', 'Heiti TC', 'Heiti SC', 'WenQuanYi Micro Hei', 'Helvetica Neue', Arial, sans-serif !important;
+}
+
 body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Microsoft JhengHei', '微軟正黑體', 'Microsoft YaHei', '微软雅黑', 'Noto Sans TC', 'PingFang TC', 'PingFang SC', 'Hiragino Sans GB', 'Heiti TC', 'Heiti SC', 'WenQuanYi Micro Hei', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .card {
