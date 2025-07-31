@@ -302,6 +302,9 @@ def get_status():
     })
 
 
+# Vercel需要這個變數
+app_instance = app
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5001))
