@@ -290,9 +290,20 @@ def download_file(output_dir, filename):
 @app.route('/status')
 def get_status():
     """獲取系統狀態"""
+    # 安全地檢查PDF處理器
+    pdf_available = False
+    pdf_status = "PDF處理器初始化失敗"
+    try:
+        pdf_processor = PdfProcessor()
+        pdf_available = pdf_processor.is_available()
+        pdf_status = pdf_processor.get_status()
+    except Exception as e:
+        pdf_status = f"PDF處理器錯誤: {str(e)}"
+
     return jsonify({
         'text_converter': text_converter.get_status(),
-        'pdf_processor_available': PdfProcessor().is_available(),
+        'pdf_processor_available': pdf_available,
+        'pdf_status': pdf_status,
         'upload_folder': app.config['UPLOAD_FOLDER'],
         'max_file_size': '100MB'
     })
