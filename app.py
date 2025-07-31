@@ -265,8 +265,29 @@ def process_pdf_file(file_path, output_dir, line_height, output_format, convert_
                 'pdf_info': pdf_info,
                 'message': 'PDF轉Markdown完成'
             }
+        elif output_format == 'epub':
+            # 生成EPUB
+            title = pdf_info.get('title', 'PDF轉換書籍')
+            if title == 'Unknown':
+                title = os.path.splitext(os.path.basename(file_path))[0]
+
+            output_filename = f"{title}.epub"
+            output_file_path = os.path.join(output_dir, output_filename)
+
+            success = pdf_processor.pdf_to_epub(file_path, output_file_path, title)
+
+            if success:
+                return {
+                    'success': True,
+                    'output_file': output_filename,
+                    'output_dir': os.path.basename(output_dir),
+                    'pdf_info': pdf_info,
+                    'message': 'PDF轉EPUB完成'
+                }
+            else:
+                return {'error': 'PDF轉EPUB失敗'}
         else:
-            return {'error': 'PDF檔案僅支援轉換為Markdown格式'}
+            return {'error': 'PDF檔案支援轉換為Markdown或EPUB格式'}
             
     except Exception as e:
         return {'error': f'PDF處理失敗: {str(e)}'}

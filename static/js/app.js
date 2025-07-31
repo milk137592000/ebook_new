@@ -155,9 +155,11 @@ function showFileInfo(data) {
     
     // 根據檔案類型調整選項
     if (data.file_type === 'pdf') {
-        // PDF只能轉換為Markdown
-        document.getElementById('formatEpub').disabled = true;
-        document.getElementById('formatMd').checked = true;
+        // PDF可以轉換為EPUB或Markdown
+        document.getElementById('formatEpub').disabled = false;
+        document.getElementById('formatMd').disabled = false;
+        // 預設選擇EPUB格式
+        document.getElementById('formatEpub').checked = true;
     }
     
     fileInfo.style.display = 'block';

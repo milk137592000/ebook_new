@@ -241,6 +241,42 @@ class PdfProcessor:
         self.document = None
         self.file_path = None
     
+    def pdf_to_epub(self, input_path: str, output_path: str, title: str = None) -> bool:
+        """
+        將PDF轉換為EPUB格式
+
+        Args:
+            input_path: 輸入PDF檔案路徑
+            output_path: 輸出EPUB檔案路徑
+            title: 書籍標題
+
+        Returns:
+            bool: 轉換是否成功
+        """
+        try:
+            # 載入PDF
+            if not self.load_pdf(input_path):
+                return False
+
+            # 提取文字內容
+            if PDFPLUMBER_AVAILABLE:
+                pages_content = self.extract_with_pdfplumber(input_path)
+            else:
+                pages_content = self.extract_text_with_structure()
+
+            if not pages_content:
+                return False
+
+            # 創建EPUB
+            success = self._create_epub_from_pdf(pages_content, output_path, title)
+
+            self.close()
+            return success
+
+        except Exception as e:
+            print(f"PDF轉EPUB失敗: {e}")
+            return False
+
     def pdf_to_markdown(self, input_path: str, output_path: str) -> bool:
         """
         將PDF轉換為Markdown格式
@@ -318,6 +354,130 @@ class PdfProcessor:
                     markdown_lines.append("")  # 空行
 
         return "\n".join(markdown_lines)
+
+    def _create_epub_from_pdf(self, pages_content: List[Dict], output_path: str, title: str = None) -> bool:
+        """
+        從PDF內容創建EPUB
+
+        Args:
+            pages_content: PDF頁面內容
+            output_path: 輸出路徑
+            title: 書籍標題
+
+        Returns:
+            bool: 是否成功
+        """
+        try:
+            from ebooklib import epub
+
+            # 創建EPUB書籍
+            book = epub.EpubBook()
+
+            # 設置元數據
+            pdf_info = self.get_pdf_info()
+            book_title = title or pdf_info.get('title', 'PDF轉換書籍')
+            book_author = pdf_info.get('author', '未知作者')
+
+            book.set_identifier('pdf_converted_' + str(hash(output_path)))
+            book.set_title(book_title)
+            book.set_language('zh')
+            book.add_author(book_author)
+
+            # 創建章節
+            chapters = []
+            spine = ['nav']
+
+            # 檢測章節
+            current_chapter = None
+            chapter_count = 0
+
+            for page_idx, page in enumerate(pages_content):
+                if 'paragraphs' in page:
+                    for para in page['paragraphs']:
+                        text = para.get('text', '').strip()
+                        if not text:
+                            continue
+
+                        # 檢查是否為新章節
+                        if para.get('is_chapter', False) or (len(text) < 100 and text.isupper()):
+                            # 保存前一章節
+                            if current_chapter:
+                                chapters.append(current_chapter)
+                                spine.append(current_chapter.get_name())
+
+                            # 創建新章節
+                            chapter_count += 1
+                            chapter_title = text if len(text) < 100 else f"第 {chapter_count} 章"
+
+                            current_chapter = epub.EpubHtml(
+                                title=chapter_title,
+                                file_name=f'chapter_{chapter_count}.xhtml',
+                                lang='zh'
+                            )
+                            current_chapter.content = f'<h1>{chapter_title}</h1>'
+                        else:
+                            # 添加段落到當前章節
+                            if not current_chapter:
+                                # 如果還沒有章節，創建第一章
+                                chapter_count += 1
+                                current_chapter = epub.EpubHtml(
+                                    title=f'第 {chapter_count} 章',
+                                    file_name=f'chapter_{chapter_count}.xhtml',
+                                    lang='zh'
+                                )
+                                current_chapter.content = f'<h1>第 {chapter_count} 章</h1>'
+
+                            # 添加段落
+                            current_chapter.content += f'<p>{text}</p>'
+
+            # 添加最後一章
+            if current_chapter:
+                chapters.append(current_chapter)
+                spine.append(current_chapter.get_name())
+
+            # 如果沒有章節，創建一個包含所有內容的章節
+            if not chapters:
+                chapter = epub.EpubHtml(
+                    title='內容',
+                    file_name='content.xhtml',
+                    lang='zh'
+                )
+                content = '<h1>PDF內容</h1>'
+                for page in pages_content:
+                    if 'paragraphs' in page:
+                        for para in page['paragraphs']:
+                            text = para.get('text', '').strip()
+                            if text:
+                                content += f'<p>{text}</p>'
+                    elif 'text' in page:
+                        content += f'<p>{page["text"]}</p>'
+
+                chapter.content = content
+                chapters.append(chapter)
+                spine.append(chapter.get_name())
+
+            # 添加章節到書籍
+            for chapter in chapters:
+                book.add_item(chapter)
+
+            # 創建目錄
+            book.toc = [(epub.Link(chapter.get_name(), chapter.title, chapter.get_name()), []) for chapter in chapters]
+
+            # 添加導航文件
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+
+            # 設置spine
+            book.spine = spine
+
+            # 寫入EPUB文件
+            epub.write_epub(output_path, book, {})
+
+            return True
+
+        except Exception as e:
+            print(f"創建EPUB失敗: {e}")
+            return False
 
     def is_available(self) -> bool:
         """
