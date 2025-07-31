@@ -93,7 +93,11 @@ def upload_file():
         print(f"上傳檔案處理:")
         print(f"  原始檔名: {original_filename}")
         print(f"  安全檔名: {secure_name}")
+        print(f"  時間戳: {timestamp}")
         print(f"  最終檔名: {filename}")
+        print(f"  原始檔名包含點號: {'.' in original_filename}")
+        print(f"  安全檔名包含點號: {'.' in secure_name}")
+        print(f"  最終檔名包含點號: {'.' in filename}")
 
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
@@ -403,6 +407,25 @@ def get_status():
         'pdf_status': pdf_status,
         'upload_folder': app.config['UPLOAD_FOLDER'],
         'max_file_size': '100MB'
+    })
+
+@app.route('/debug/filename/<filename>')
+def debug_filename(filename):
+    """調試檔案名稱處理"""
+    from werkzeug.utils import secure_filename
+
+    secure_name = secure_filename(filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    final_name = f"{timestamp}_{secure_name}"
+
+    return jsonify({
+        'original': filename,
+        'secure': secure_name,
+        'timestamp': timestamp,
+        'final': final_name,
+        'original_has_dot': '.' in filename,
+        'secure_has_dot': '.' in secure_name,
+        'final_has_dot': '.' in final_name
     })
 
 

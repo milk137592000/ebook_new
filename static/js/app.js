@@ -136,8 +136,11 @@ function uploadFile(file) {
         
         if (data.success) {
             uploadedFile = data;
-            console.log('上傳成功，保存的檔案數據:', uploadedFile);
+            console.log('上傳成功，完整響應數據:', data);
+            console.log('保存的檔案數據:', uploadedFile);
             console.log('檔案名稱:', uploadedFile.filename);
+            console.log('檔案類型:', uploadedFile.file_type);
+            console.log('檔案大小:', uploadedFile.file_size);
             showFileInfo(data);
             showStep2();
         } else {
@@ -196,16 +199,25 @@ function startConversion() {
     }
 
     let filename = uploadedFile.filename;
+    console.log('原始檔案名稱:', filename);
+    console.log('檔案類型:', uploadedFile.file_type);
 
-    // 檢查檔案名稱是否包含副檔名，如果沒有則根據檔案類型添加
-    if (!filename.includes('.')) {
-        const fileType = uploadedFile.file_type;
-        if (fileType === 'pdf') {
-            filename += '.pdf';
-        } else if (fileType === 'epub') {
-            filename += '.epub';
-        }
-        console.log('檔案名稱缺少副檔名，已修復:', filename);
+    // 檢查檔案名稱是否有正確的副檔名
+    const fileType = uploadedFile.file_type;
+    let needsExtension = false;
+
+    if (fileType === 'pdf' && !filename.toLowerCase().endsWith('.pdf')) {
+        filename += '.pdf';
+        needsExtension = true;
+    } else if (fileType === 'epub' && !filename.toLowerCase().endsWith('.epub')) {
+        filename += '.epub';
+        needsExtension = true;
+    }
+
+    if (needsExtension) {
+        console.log('檔案名稱缺少正確副檔名，已修復:', filename);
+    } else {
+        console.log('檔案名稱副檔名正確:', filename);
     }
 
     const conversionData = {
