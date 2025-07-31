@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPUB/PDF轉換器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h1><i class="fas fa-book-open"></i> EPUB/PDF轉換器</h1>
+                        <p class="mb-0">支援簡體轉正體、行距調整、多格式輸出</p>
+                    </div>
+                    <div class="card-body">
+                        <!-- 步驟1: 檔案上傳 -->
+                        <div class="step-section" id="step1">
+                            <h4><span class="step-number">1</span> 上傳檔案</h4>
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">拖拽檔案到此處或點擊選擇</p>
+                                    <p class="small text-muted">支援 EPUB、PDF 格式，最大 100MB</p>
+                                    <input type="file" id="fileInput" accept=".epub,.pdf" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary" id="selectFileBtn">
+                                        <i class="fas fa-folder-open"></i> 選擇檔案
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="fileInfo" class="mt-3" style="display: none;">
+                                <div class="alert alert-info">
+                                    <strong>已選擇檔案：</strong>
+                                    <span id="fileName"></span>
+                                    <span id="fileSize" class="badge bg-secondary ms-2"></span>
+                                    <span id="fileType" class="badge bg-primary ms-2"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 步驟2: 設定選項 -->
+                        <div class="step-section" id="step2" style="display: none;">
+                            <h4><span class="step-number">2</span> 轉換設定</h4>
+                            
+                            <!-- 行距設定 -->
+                            <div class="mb-3">
+                                <label for="lineHeight" class="form-label">行距</label>
+                                <div class="row align-items-center">
+                                    <div class="col-8">
+                                        <input type="range" class="form-range" id="lineHeight" min="1.0" max="3.0" step="0.1" value="1.6">
+                                    </div>
+                                    <div class="col-4">
+                                        <span id="lineHeightValue" class="badge bg-info">1.6</span>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">調整文字行距，建議值：1.4-2.0</small>
+                            </div>
+
+                            <!-- 簡繁轉換 -->
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="convertSimplified" checked>
+                                    <label class="form-check-label" for="convertSimplified">
+                                        <i class="fas fa-language"></i> 自動簡體轉正體
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">自動檢測並轉換簡體中文為正體中文</small>
+                            </div>
+
+                            <!-- 輸出格式 -->
+                            <div class="mb-3">
+                                <label class="form-label">輸出格式</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="outputFormat" id="formatEpub" value="epub" checked>
+                                            <label class="form-check-label" for="formatEpub">
+                                                <i class="fas fa-book"></i> EPUB
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">標準電子書格式</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="outputFormat" id="formatMd" value="md">
+                                            <label class="form-check-label" for="formatMd">
+                                                <i class="fab fa-markdown"></i> Markdown
+                                            </label>
+                                        </div>
+                                        <small class="form-text text-muted">適合 Obsidian 的格式</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 步驟3: 開始轉換 -->
+                        <div class="step-section" id="step3" style="display: none;">
+                            <h4><span class="step-number">3</span> 開始轉換</h4>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-success btn-lg" id="convertBtn">
+                                    <i class="fas fa-magic"></i> 開始轉換
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 轉換進度 -->
+                        <div id="progressSection" style="display: none;">
+                            <h4><i class="fas fa-cog fa-spin"></i> 轉換中...</h4>
+                            <div class="progress mb-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <p id="progressText" class="text-center text-muted">正在處理檔案...</p>
+                        </div>
+
+                        <!-- 轉換結果 -->
+                        <div id="resultSection" style="display: none;">
+                            <h4><i class="fas fa-check-circle text-success"></i> 轉換完成</h4>
+                            <div id="resultContent"></div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-primary" id="downloadBtn">
+                                    <i class="fas fa-download"></i> 下載檔案
+                                </button>
+                                <button type="button" class="btn btn-secondary ms-2" onclick="location.reload()">
+                                    <i class="fas fa-redo"></i> 重新開始
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 錯誤訊息 -->
+                        <div id="errorSection" style="display: none;">
+                            <div class="alert alert-danger">
+                                <h5><i class="fas fa-exclamation-triangle"></i> 轉換失敗</h5>
+                                <p id="errorMessage"></p>
+                                <button type="button" class="btn btn-outline-danger" onclick="location.reload()">
+                                    <i class="fas fa-redo"></i> 重新開始
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系統狀態 -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> 系統狀態</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="systemStatus">
+                            <p><i class="fas fa-spinner fa-spin"></i> 載入中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
