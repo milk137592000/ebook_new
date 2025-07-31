@@ -33,19 +33,25 @@ class PdfProcessor:
     def load_pdf(self, file_path: str) -> bool:
         """
         載入PDF檔案
-        
+
         Args:
             file_path: PDF檔案路徑
-            
+
         Returns:
             bool: 載入是否成功
         """
-        if not PYMUPDF_AVAILABLE:
-            print("錯誤：PyMuPDF未安裝，無法處理PDF檔案")
+        if not (PYPDF2_AVAILABLE or PDFPLUMBER_AVAILABLE):
+            print("錯誤：PDF處理庫未安裝，無法處理PDF檔案")
             return False
-        
+
         try:
-            self.document = fitz.open(file_path)
+            # 使用PyPDF2載入PDF
+            if PYPDF2_AVAILABLE:
+                with open(file_path, 'rb') as file:
+                    self.document = PyPDF2.PdfReader(file)
+                    # 驗證PDF是否可讀
+                    _ = len(self.document.pages)
+
             self.file_path = file_path
             return True
         except Exception as e:
@@ -55,58 +61,46 @@ class PdfProcessor:
     def extract_text_with_structure(self) -> List[Dict]:
         """
         提取PDF文字並保持結構
-        
+
         Returns:
             List[Dict]: 包含頁面和段落資訊的列表
         """
-        if not self.document:
+        if not self.file_path:
             return []
-        
+
         pages_content = []
-        
+
         try:
-            for page_num in range(len(self.document)):
-                page = self.document[page_num]
-                
-                # 提取文字塊
-                text_blocks = page.get_text("dict")
-                
-                page_content = {
-                    'page_number': page_num + 1,
-                    'paragraphs': []
-                }
-                
-                # 處理文字塊
-                for block in text_blocks.get("blocks", []):
-                    if "lines" in block:
-                        paragraph_text = ""
-                        font_sizes = []
-                        
-                        for line in block["lines"]:
-                            line_text = ""
-                            for span in line.get("spans", []):
-                                text = span.get("text", "").strip()
-                                if text:
-                                    line_text += text + " "
-                                    font_sizes.append(span.get("size", 12))
-                            
-                            if line_text.strip():
-                                paragraph_text += line_text.strip() + "\n"
-                        
-                        if paragraph_text.strip():
-                            # 判斷是否為標題（基於字體大小）
-                            avg_font_size = sum(font_sizes) / len(font_sizes) if font_sizes else 12
-                            is_title = avg_font_size > 14  # 假設大於14pt的為標題
-                            
-                            page_content['paragraphs'].append({
-                                'text': paragraph_text.strip(),
-                                'is_title': is_title,
-                                'font_size': avg_font_size
-                            })
-                
-                if page_content['paragraphs']:
-                    pages_content.append(page_content)
-                    
+            # 使用PyPDF2提取文字
+            if PYPDF2_AVAILABLE:
+                with open(self.file_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+
+                    for page_num, page in enumerate(pdf_reader.pages):
+                        try:
+                            text = page.extract_text()
+
+                            page_content = {
+                                'page_number': page_num + 1,
+                                'paragraphs': []
+                            }
+
+                            # 簡單的段落分割
+                            paragraphs = text.split('\n\n')
+                            for para_text in paragraphs:
+                                para_text = para_text.strip()
+                                if para_text:
+                                    page_content['paragraphs'].append({
+                                        'text': para_text,
+                                        'font_size': 12,  # 預設字體大小
+                                        'is_chapter': len(para_text) < 100 and para_text.isupper()  # 簡單的章節檢測
+                                    })
+
+                            pages_content.append(page_content)
+                        except Exception as e:
+                            print(f"提取第{page_num + 1}頁失敗: {e}")
+                            continue
+
         except Exception as e:
             print(f"提取PDF文字失敗: {e}")
         

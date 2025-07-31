@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 MAGIC_AVAILABLE = False
 
 from core.epub_processor import EpubProcessor
-from core.pdf_processor import PDFProcessor
+from core.pdf_processor import PdfProcessor
 from core.text_converter import text_converter
 from core.markdown_generator import MarkdownGenerator
 from utils.helpers import validate_epub_file, get_file_size_mb
@@ -227,7 +227,7 @@ def process_pdf_file(file_path, output_dir, line_height, output_format, convert_
     """處理PDF檔案"""
     try:
         # 初始化處理器
-        pdf_processor = PDFProcessor()
+        pdf_processor = PdfProcessor()
         
         # 載入PDF
         if not pdf_processor.load_pdf(file_path):
@@ -292,7 +292,7 @@ def get_status():
     """獲取系統狀態"""
     return jsonify({
         'text_converter': text_converter.get_status(),
-        'pdf_processor_available': PDFProcessor().is_available(),
+        'pdf_processor_available': PdfProcessor().is_available(),
         'upload_folder': app.config['UPLOAD_FOLDER'],
         'max_file_size': '100MB'
     })
