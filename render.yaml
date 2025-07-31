@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: epub-converter
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONPATH
+        value: /opt/render/project/src

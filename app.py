@@ -10,8 +10,12 @@ import zipfile
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
-# 在Vercel環境中禁用python-magic
-MAGIC_AVAILABLE = False
+try:
+    import magic
+    MAGIC_AVAILABLE = True
+except ImportError:
+    MAGIC_AVAILABLE = False
+    print("警告：python-magic不可用，將使用檔案副檔名檢測")
 
 from core.epub_processor import EpubProcessor
 from core.pdf_processor import PDFProcessor

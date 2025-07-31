@@ -4,14 +4,26 @@
 
 ## 🚀 一鍵部署
 
+### Railway 部署（推薦）
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/milk137592000/ebook_new)
+- ✅ 支援完整OpenCC簡繁轉換功能
+- ✅ 支援所有Python依賴
+- ✅ 免費額度充足
+
 ### Heroku 部署
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/milk137592000/ebook_new)
+- ✅ 支援完整功能
+- ✅ 經典穩定平台
 
-### Vercel 部署
+### Render 部署
+[Deploy to Render](https://render.com/deploy?repo=https://github.com/milk137592000/ebook_new)
+- ✅ 支援完整功能
+- ✅ 免費且穩定
+
+### ⚠️ Vercel 部署（不推薦）
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/milk137592000/ebook_new)
-
-### Railway 部署
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/milk137592000/ebook_new)
+- ❌ OpenCC簡繁轉換功能受限
+- ❌ 部分Python依賴不支援
 
 ## 🌟 功能特色
 
