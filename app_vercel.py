@@ -29,6 +29,19 @@ def health():
         "environment": "vercel" if VERCEL_ENV else "local"
     })
 
+@app.route('/api/status')
+@app.route('/status')
+def api_status():
+    """系統狀態API"""
+    return jsonify({
+        "status": "running",
+        "version": "1.0.0",
+        "environment": "vercel" if VERCEL_ENV else "local",
+        "text_converter": "OpenCC簡繁轉換器已就緒" if not VERCEL_ENV else "OpenCC簡繁轉換器 (Vercel環境已禁用)",
+        "pdf_processor_available": not VERCEL_ENV,  # PDF處理在Vercel環境中禁用
+        "message": "EPUB轉換器運行中" + (" (Vercel環境)" if VERCEL_ENV else "")
+    })
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """檔案上傳處理"""
