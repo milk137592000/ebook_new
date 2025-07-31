@@ -85,24 +85,37 @@ def upload_file():
         return jsonify({'error': '沒有選擇檔案'}), 400
     
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
+        original_filename = file.filename
+        secure_name = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"{timestamp}_{filename}"
-        
+        filename = f"{timestamp}_{secure_name}"
+
+        print(f"上傳檔案處理:")
+        print(f"  原始檔名: {original_filename}")
+        print(f"  安全檔名: {secure_name}")
+        print(f"  最終檔名: {filename}")
+
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        
+
         # 檢測檔案類型
         file_type = detect_file_type(file_path)
         file_size = get_file_size_mb(file_path)
-        
-        return jsonify({
+
+        print(f"  檔案路徑: {file_path}")
+        print(f"  檔案類型: {file_type}")
+        print(f"  檔案大小: {file_size:.1f} MB")
+
+        response_data = {
             'success': True,
             'filename': filename,
             'file_type': file_type,
             'file_size': f"{file_size:.1f} MB",
             'message': '檔案上傳成功'
-        })
+        }
+
+        print(f"  響應數據: {response_data}")
+        return jsonify(response_data)
     
     return jsonify({'error': '不支援的檔案格式'}), 400
 

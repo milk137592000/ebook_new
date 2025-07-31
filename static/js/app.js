@@ -136,6 +136,8 @@ function uploadFile(file) {
         
         if (data.success) {
             uploadedFile = data;
+            console.log('上傳成功，保存的檔案數據:', uploadedFile);
+            console.log('檔案名稱:', uploadedFile.filename);
             showFileInfo(data);
             showStep2();
         } else {
@@ -193,8 +195,21 @@ function startConversion() {
         return;
     }
 
+    let filename = uploadedFile.filename;
+
+    // 檢查檔案名稱是否包含副檔名，如果沒有則根據檔案類型添加
+    if (!filename.includes('.')) {
+        const fileType = uploadedFile.file_type;
+        if (fileType === 'pdf') {
+            filename += '.pdf';
+        } else if (fileType === 'epub') {
+            filename += '.epub';
+        }
+        console.log('檔案名稱缺少副檔名，已修復:', filename);
+    }
+
     const conversionData = {
-        filename: uploadedFile.filename,
+        filename: filename,
         line_height: parseFloat(lineHeight.value),
         output_format: outputFormatElement.value,
         convert_simplified: document.getElementById('convertSimplified').checked
