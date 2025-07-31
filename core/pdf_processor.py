@@ -7,12 +7,13 @@ import os
 import re
 from typing import List, Dict, Optional, Tuple
 
+# 使用更輕量的PDF處理庫
 try:
-    import fitz  # PyMuPDF
-    PYMUPDF_AVAILABLE = True
+    import PyPDF2
+    PYPDF2_AVAILABLE = True
 except ImportError:
-    PYMUPDF_AVAILABLE = False
-    print("警告：PyMuPDF未安裝，PDF處理功能將不可用")
+    PYPDF2_AVAILABLE = False
+    print("警告：PyPDF2未安裝，PDF處理功能將不可用")
 
 try:
     import pdfplumber
@@ -22,7 +23,7 @@ except ImportError:
     print("警告：pdfplumber未安裝，PDF處理功能將受限")
 
 
-class PDFProcessor:
+class PdfProcessor:
     """PDF處理器"""
     
     def __init__(self):
@@ -249,14 +250,92 @@ class PDFProcessor:
             self.document = None
             self.file_path = None
     
+    def pdf_to_markdown(self, input_path: str, output_path: str) -> bool:
+        """
+        將PDF轉換為Markdown格式
+
+        Args:
+            input_path: 輸入PDF檔案路徑
+            output_path: 輸出Markdown檔案路徑
+
+        Returns:
+            bool: 轉換是否成功
+        """
+        try:
+            # 載入PDF
+            if not self.load_pdf(input_path):
+                return False
+
+            # 提取文字內容
+            if PDFPLUMBER_AVAILABLE:
+                pages_content = self.extract_with_pdfplumber(input_path)
+            else:
+                pages_content = self.extract_text_with_structure()
+
+            if not pages_content:
+                return False
+
+            # 轉換為Markdown
+            markdown_content = self._convert_to_markdown(pages_content)
+
+            # 儲存Markdown檔案
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(markdown_content)
+
+            self.close()
+            return True
+
+        except Exception as e:
+            print(f"PDF轉Markdown失敗: {e}")
+            return False
+
+    def _convert_to_markdown(self, pages_content: List[Dict]) -> str:
+        """
+        將頁面內容轉換為Markdown格式
+
+        Args:
+            pages_content: 頁面內容列表
+
+        Returns:
+            str: Markdown內容
+        """
+        markdown_lines = []
+
+        # 添加標題
+        markdown_lines.append("# PDF轉換文檔\n")
+
+        for page_idx, page in enumerate(pages_content):
+            # 添加頁面標題
+            markdown_lines.append(f"## 第 {page_idx + 1} 頁\n")
+
+            # 處理段落
+            if 'paragraphs' in page:
+                for para in page['paragraphs']:
+                    text = para.get('text', '').strip()
+                    if text:
+                        # 檢查是否為章節標題
+                        if para.get('is_chapter', False):
+                            markdown_lines.append(f"### {text}\n")
+                        else:
+                            markdown_lines.append(f"{text}\n")
+                        markdown_lines.append("")  # 空行
+            elif 'text' in page:
+                # 簡單文字內容
+                text = page['text'].strip()
+                if text:
+                    markdown_lines.append(f"{text}\n")
+                    markdown_lines.append("")  # 空行
+
+        return "\n".join(markdown_lines)
+
     def is_available(self) -> bool:
         """
         檢查PDF處理功能是否可用
-        
+
         Returns:
             bool: 是否可用
         """
-        return PYMUPDF_AVAILABLE or PDFPLUMBER_AVAILABLE
+        return PYPDF2_AVAILABLE or PDFPLUMBER_AVAILABLE
     
     def get_status(self) -> str:
         """
@@ -265,11 +344,11 @@ class PDFProcessor:
         Returns:
             str: 狀態描述
         """
-        if PYMUPDF_AVAILABLE and PDFPLUMBER_AVAILABLE:
-            return "PDF處理功能完全可用（PyMuPDF + pdfplumber）"
-        elif PYMUPDF_AVAILABLE:
-            return "PDF處理功能可用（僅PyMuPDF）"
+        if PYPDF2_AVAILABLE and PDFPLUMBER_AVAILABLE:
+            return "PDF處理器已就緒 (PyPDF2 + pdfplumber)"
+        elif PYPDF2_AVAILABLE:
+            return "PDF處理器已就緒 (PyPDF2)"
         elif PDFPLUMBER_AVAILABLE:
-            return "PDF處理功能受限（僅pdfplumber）"
+            return "PDF處理器已就緒 (pdfplumber)"
         else:
-            return "PDF處理功能不可用，請安裝: pip install PyMuPDF pdfplumber"
+            return "PDF處理器不可用"

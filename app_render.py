@@ -44,10 +44,17 @@ def health():
 @app.route('/status')
 def status():
     """系統狀態"""
+    # 檢查PDF處理器是否可用
+    pdf_available = True
+    try:
+        from core.pdf_processor import PdfProcessor
+    except ImportError:
+        pdf_available = False
+
     return jsonify({
         "status": "running",
         "text_converter": "OpenCC簡繁轉換器已就緒",
-        "pdf_processor_available": True,
+        "pdf_processor_available": pdf_available,
         "message": "EPUB轉換器運行中 (Render環境)"
     })
 
@@ -152,7 +159,39 @@ def convert_file():
             })
             
         else:  # PDF
-            return jsonify({'error': 'PDF轉換功能在Render環境中暫時不可用'}), 400
+            try:
+                pdf_processor = PdfProcessor()
+
+                # PDF只能轉換為Markdown
+                if output_format != 'md':
+                    return jsonify({'error': 'PDF檔案只能轉換為Markdown格式'}), 400
+
+                # 轉換PDF為Markdown
+                output_filename = f"converted_{os.path.splitext(os.path.basename(filename))[0]}.md"
+                output_path = os.path.join(UPLOAD_FOLDER, output_filename)
+
+                success = pdf_processor.pdf_to_markdown(input_path, output_path)
+
+                if not success:
+                    return jsonify({'error': '轉換PDF失敗'}), 500
+
+                return jsonify({
+                    'success': True,
+                    'message': '轉換完成',
+                    'download_url': f'/download/{output_filename}',
+                    'output_filename': output_filename,
+                    'book_info': {
+                        'title': os.path.splitext(os.path.basename(filename))[0],
+                        'author': '未知',
+                        'language': '未知'
+                    },
+                    'conversion_stats': None
+                })
+
+            except ImportError:
+                return jsonify({'error': 'PDF處理器不可用，請檢查依賴安裝'}), 500
+            except Exception as e:
+                return jsonify({'error': f'PDF轉換失敗: {str(e)}'}), 500
         
     except Exception as e:
         return jsonify({'error': f'轉換失敗: {str(e)}'}), 500
