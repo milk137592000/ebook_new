@@ -2,6 +2,17 @@
 
 這是一個功能強大的EPUB/PDF格式轉換網頁應用程式，支援簡體轉正體中文、閱讀方向調整、行距設定和多格式輸出。
 
+## 🚀 一鍵部署
+
+### Heroku 部署
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/milk137592000/ebook_new)
+
+### Vercel 部署
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/milk137592000/ebook_new)
+
+### Railway 部署
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/milk137592000/ebook_new)
+
 ## 🌟 功能特色
 
 - 📖 **多格式支援**：支援EPUB和PDF檔案輸入
