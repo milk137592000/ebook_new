@@ -181,12 +181,42 @@ function startConversion() {
         return;
     }
     
+    // 驗證必要數據
+    if (!uploadedFile || !uploadedFile.filename) {
+        showError('上傳檔案信息丟失，請重新上傳');
+        return;
+    }
+
+    const outputFormatElement = document.querySelector('input[name="outputFormat"]:checked');
+    if (!outputFormatElement) {
+        showError('請選擇輸出格式');
+        return;
+    }
+
     const conversionData = {
         filename: uploadedFile.filename,
         line_height: parseFloat(lineHeight.value),
-        output_format: document.querySelector('input[name="outputFormat"]:checked').value,
+        output_format: outputFormatElement.value,
         convert_simplified: document.getElementById('convertSimplified').checked
     };
+
+    // 驗證數據完整性
+    console.log('轉換數據:', conversionData);
+
+    if (!conversionData.filename) {
+        showError('檔案名稱為空');
+        return;
+    }
+
+    if (isNaN(conversionData.line_height) || conversionData.line_height < 1.0 || conversionData.line_height > 3.0) {
+        showError('行距設置錯誤，請設置在1.0-3.0之間');
+        return;
+    }
+
+    if (!['epub', 'md'].includes(conversionData.output_format)) {
+        showError('輸出格式錯誤');
+        return;
+    }
     
     showProgress('開始轉換程序...');
     hideSteps();
@@ -236,7 +266,15 @@ function startConversion() {
     .catch(error => {
         hideProgress();
         console.error('轉換錯誤:', error);
-        showError('轉換過程發生錯誤: ' + error.message);
+        console.error('轉換數據:', conversionData);
+
+        // 顯示更詳細的錯誤信息
+        let errorMessage = '轉換過程發生錯誤: ' + error.message;
+        if (error.message.includes('HTTP 400')) {
+            errorMessage += '\n\n可能的原因：\n- 檔案參數錯誤\n- 請求格式不正確\n- 檔案已過期';
+        }
+
+        showError(errorMessage);
     });
 }
 

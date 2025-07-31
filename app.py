@@ -112,24 +112,59 @@ def convert_file():
     """處理檔案轉換"""
     try:
         # 檢查請求數據
+        print(f"請求方法: {request.method}")
+        print(f"Content-Type: {request.headers.get('Content-Type')}")
+        print(f"是否為JSON: {request.is_json}")
+
         if not request.is_json:
-            return jsonify({'error': '請求必須是JSON格式'}), 400
+            return jsonify({'error': f'請求必須是JSON格式，當前Content-Type: {request.headers.get("Content-Type")}'}), 400
 
         data = request.get_json()
+        print(f"接收到的數據: {data}")
+
         if not data:
-            return jsonify({'error': '無效的JSON數據'}), 400
+            return jsonify({'error': '無效的JSON數據或空數據'}), 400
 
         filename = data.get('filename')
-        line_height = float(data.get('line_height', 1.6))
-        output_format = data.get('output_format', 'epub')
-        convert_simplified = data.get('convert_simplified', True)
+        print(f"檔案名: {filename}")
 
         if not filename:
-            return jsonify({'error': '沒有指定檔案'}), 400
+            return jsonify({'error': '沒有指定檔案名稱'}), 400
+
+        # 驗證line_height參數
+        try:
+            line_height = float(data.get('line_height', 1.6))
+            if line_height < 1.0 or line_height > 3.0:
+                return jsonify({'error': f'行距必須在1.0-3.0之間，當前值: {line_height}'}), 400
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'行距格式錯誤: {data.get("line_height")}'}), 400
+
+        output_format = data.get('output_format', 'epub')
+        if output_format not in ['epub', 'md']:
+            return jsonify({'error': f'不支援的輸出格式: {output_format}'}), 400
+
+        convert_simplified = data.get('convert_simplified', True)
+        if not isinstance(convert_simplified, bool):
+            return jsonify({'error': f'convert_simplified必須是布林值: {convert_simplified}'}), 400
+
+        print(f"參數驗證通過 - 檔案: {filename}, 行距: {line_height}, 格式: {output_format}, 簡繁轉換: {convert_simplified}")
 
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        print(f"檔案路徑: {file_path}")
+        print(f"檔案是否存在: {os.path.exists(file_path)}")
+
         if not os.path.exists(file_path):
-            return jsonify({'error': f'檔案不存在: {filename}'}), 404
+            # 列出上傳目錄中的檔案
+            try:
+                upload_files = os.listdir(app.config['UPLOAD_FOLDER'])
+                print(f"上傳目錄中的檔案: {upload_files}")
+                return jsonify({
+                    'error': f'檔案不存在: {filename}',
+                    'upload_folder': app.config['UPLOAD_FOLDER'],
+                    'available_files': upload_files
+                }), 404
+            except Exception as e:
+                return jsonify({'error': f'檔案不存在且無法讀取上傳目錄: {str(e)}'}), 404
 
         # 檢測檔案類型
         file_type = detect_file_type(file_path)
