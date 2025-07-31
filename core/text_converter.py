@@ -6,12 +6,18 @@
 import re
 from typing import Optional
 
-try:
-    import opencc
-    OPENCC_AVAILABLE = True
-except ImportError:
+# 在Vercel環境中禁用OpenCC以避免初始化問題
+import os
+if os.environ.get('VERCEL'):
     OPENCC_AVAILABLE = False
-    print("警告：OpenCC未安裝，簡繁轉換功能將不可用")
+    print("Vercel環境：禁用OpenCC")
+else:
+    try:
+        import opencc
+        OPENCC_AVAILABLE = True
+    except ImportError:
+        OPENCC_AVAILABLE = False
+        print("警告：OpenCC未安裝，簡繁轉換功能將不可用")
 
 
 class TextConverter:
