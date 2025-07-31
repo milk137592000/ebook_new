@@ -4,21 +4,22 @@
 
 ## 🚀 一鍵部署
 
-### Railway 部署（推薦）
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/milk137592000/ebook_new)
+### Render 部署（推薦 - 完全免費）
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/milk137592000/ebook_new)
+- ✅ **完全免費**：永久免費方案
 - ✅ 支援完整OpenCC簡繁轉換功能
 - ✅ 支援所有Python依賴
-- ✅ 免費額度充足
+- ✅ 無休眠限制
 
 ### Heroku 部署
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/milk137592000/ebook_new)
 - ✅ 支援完整功能
 - ✅ 經典穩定平台
 
-### Render 部署
-[Deploy to Render](https://render.com/deploy?repo=https://github.com/milk137592000/ebook_new)
+### Railway 部署
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/milk137592000/ebook_new)
 - ✅ 支援完整功能
-- ✅ 免費且穩定
+- ⚠️ 每月$5美元免費額度
 
 ### ⚠️ Vercel 部署（不推薦）
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/milk137592000/ebook_new)
