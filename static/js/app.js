@@ -124,7 +124,7 @@ function uploadFile(file) {
     formData.append('file', file);
     
     // 顯示上傳進度
-    showProgress('上傳檔案中...');
+    showUploadProgress();
     
     fetch('/upload', {
         method: 'POST',
@@ -188,9 +188,15 @@ function startConversion() {
         convert_simplified: document.getElementById('convertSimplified').checked
     };
     
-    showProgress('轉換中，請稍候...');
+    showProgress('開始轉換程序...');
     hideSteps();
-    
+
+    // 模擬進度更新
+    setTimeout(() => updateProgress(20, '載入檔案中...', 'load'), 500);
+    setTimeout(() => updateProgress(40, '分析檔案結構...', 'process'), 1000);
+    setTimeout(() => updateProgress(60, '處理文字內容...', 'process'), 1500);
+    setTimeout(() => updateProgress(80, '執行格式轉換...', 'convert'), 2000);
+
     fetch('/convert', {
         method: 'POST',
         headers: {
@@ -213,14 +219,19 @@ function startConversion() {
         return response.json();
     })
     .then(data => {
-        hideProgress();
+        // 完成最後步驟
+        updateProgress(100, '轉換完成！', 'save');
 
-        if (data.success) {
-            conversionResult = data;
-            showResult(data);
-        } else {
-            showError(data.error || '轉換失敗');
-        }
+        setTimeout(() => {
+            hideProgress();
+
+            if (data.success) {
+                conversionResult = data;
+                showResult(data);
+            } else {
+                showError(data.error || '轉換失敗');
+            }
+        }, 1000); // 讓用戶看到100%完成狀態
     })
     .catch(error => {
         hideProgress();
@@ -309,12 +320,126 @@ function downloadFile() {
     document.body.removeChild(link);
 }
 
+// 進度管理
+let progressSteps = ['init', 'load', 'process', 'convert', 'save'];
+let currentStep = 0;
+let startTime = null;
+
 function showProgress(message) {
+    startTime = Date.now();
+    currentStep = 0;
+
+    // 重置所有步驟
+    progressSteps.forEach(step => {
+        const stepElement = document.getElementById(`step-${step}`);
+        stepElement.classList.remove('active', 'completed');
+    });
+
+    // 重置進度條
+    document.getElementById('mainProgressBar').style.width = '0%';
+    document.getElementById('progressPercentage').textContent = '0%';
     document.getElementById('progressText').textContent = message;
+    document.getElementById('progressTitle').textContent = '轉換中...';
+    document.getElementById('estimatedTime').textContent = '計算中...';
+
     progressSection.style.display = 'block';
+
+    // 開始第一步
+    updateProgress(0, '初始化轉換程序...');
+}
+
+function updateProgress(percentage, message, stepName = null) {
+    // 更新進度條
+    const progressBar = document.getElementById('mainProgressBar');
+    const progressText = document.getElementById('progressText');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const estimatedTime = document.getElementById('estimatedTime');
+
+    progressBar.style.width = percentage + '%';
+    progressPercentage.textContent = Math.round(percentage) + '%';
+    progressText.textContent = message;
+
+    // 計算預估時間
+    if (startTime && percentage > 0) {
+        const elapsed = Date.now() - startTime;
+        const estimated = (elapsed / percentage) * (100 - percentage);
+        const seconds = Math.ceil(estimated / 1000);
+
+        if (seconds > 60) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            estimatedTime.textContent = `${minutes}分${remainingSeconds}秒`;
+        } else {
+            estimatedTime.textContent = `${seconds}秒`;
+        }
+    }
+
+    // 更新步驟狀態
+    if (stepName) {
+        const stepIndex = progressSteps.indexOf(stepName);
+        if (stepIndex !== -1) {
+            // 標記之前的步驟為完成
+            for (let i = 0; i < stepIndex; i++) {
+                const stepElement = document.getElementById(`step-${progressSteps[i]}`);
+                stepElement.classList.remove('active');
+                stepElement.classList.add('completed');
+            }
+
+            // 標記當前步驟為活動
+            const currentStepElement = document.getElementById(`step-${stepName}`);
+            currentStepElement.classList.add('active');
+            currentStepElement.classList.remove('completed');
+        }
+    }
+}
+
+function showUploadProgress() {
+    document.getElementById('progressTitle').textContent = '上傳中...';
+    document.getElementById('progressText').textContent = '正在上傳檔案...';
+    document.getElementById('mainProgressBar').style.width = '0%';
+    document.getElementById('progressPercentage').textContent = '0%';
+    document.getElementById('estimatedTime').textContent = '計算中...';
+
+    // 重置步驟
+    progressSteps.forEach(step => {
+        const stepElement = document.getElementById(`step-${step}`);
+        stepElement.classList.remove('active', 'completed');
+    });
+
+    progressSection.style.display = 'block';
+
+    // 模擬上傳進度
+    let uploadProgress = 0;
+    const uploadInterval = setInterval(() => {
+        uploadProgress += Math.random() * 15 + 5;
+        if (uploadProgress >= 95) {
+            uploadProgress = 95;
+            clearInterval(uploadInterval);
+        }
+
+        document.getElementById('mainProgressBar').style.width = uploadProgress + '%';
+        document.getElementById('progressPercentage').textContent = Math.round(uploadProgress) + '%';
+
+        if (uploadProgress < 30) {
+            document.getElementById('progressText').textContent = '正在上傳檔案...';
+        } else if (uploadProgress < 70) {
+            document.getElementById('progressText').textContent = '檔案上傳中...';
+        } else {
+            document.getElementById('progressText').textContent = '處理上傳的檔案...';
+        }
+    }, 200);
+
+    // 儲存interval ID以便清除
+    window.uploadInterval = uploadInterval;
 }
 
 function hideProgress() {
+    // 清除上傳進度interval
+    if (window.uploadInterval) {
+        clearInterval(window.uploadInterval);
+        window.uploadInterval = null;
+    }
+
     progressSection.style.display = 'none';
 }
 

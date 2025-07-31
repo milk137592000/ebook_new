@@ -121,12 +121,50 @@
 
                         <!-- 轉換進度 -->
                         <div id="progressSection" style="display: none;">
-                            <h4><i class="fas fa-cog fa-spin"></i> 轉換中...</h4>
-                            <div class="progress mb-3">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" style="width: 100%"></div>
+                            <div class="text-center mb-3">
+                                <h4><i id="progressIcon" class="fas fa-cog fa-spin"></i> <span id="progressTitle">轉換中...</span></h4>
+                                <p id="progressText" class="text-muted">正在初始化...</p>
                             </div>
-                            <p id="progressText" class="text-center text-muted">正在處理檔案...</p>
+
+                            <!-- 主進度條 -->
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div id="mainProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 0%">
+                                    <span id="progressPercentage">0%</span>
+                                </div>
+                            </div>
+
+                            <!-- 詳細步驟進度 -->
+                            <div class="progress-steps mb-3">
+                                <div class="step-item" id="step-init">
+                                    <i class="fas fa-circle-notch fa-spin step-icon"></i>
+                                    <span class="step-text">初始化</span>
+                                </div>
+                                <div class="step-item" id="step-load">
+                                    <i class="fas fa-circle step-icon"></i>
+                                    <span class="step-text">載入檔案</span>
+                                </div>
+                                <div class="step-item" id="step-process">
+                                    <i class="fas fa-circle step-icon"></i>
+                                    <span class="step-text">處理內容</span>
+                                </div>
+                                <div class="step-item" id="step-convert">
+                                    <i class="fas fa-circle step-icon"></i>
+                                    <span class="step-text">格式轉換</span>
+                                </div>
+                                <div class="step-item" id="step-save">
+                                    <i class="fas fa-circle step-icon"></i>
+                                    <span class="step-text">儲存檔案</span>
+                                </div>
+                            </div>
+
+                            <!-- 估計時間 -->
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i>
+                                    預估剩餘時間: <span id="estimatedTime">計算中...</span>
+                                </small>
+                            </div>
                         </div>
 
                         <!-- 轉換結果 -->
